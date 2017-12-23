@@ -1,0 +1,454 @@
+#!/bin/bash
+#set -x
+
+############# VARIABLES ###################
+diri=/mnt/linux
+out=/home/
+loa=/var/tmp/linux/boot/x86_64/loader
+raiz=/var/tmp/linux
+pkg=/home/$USER/SIPA/
+
+##########################################
+
+#### Check root user ####
+
+
+if [[ $EUID -ne 0 ]]; then
+	clear
+	echo
+	echo
+	echo
+	echo
+	echo
+	echo "I'm sorry you are not magical user, call me god and have your power" 2>&1
+	echo
+	echo
+	echo
+	echo
+	echo
+	exit 1
+
+
+elif [ "$1" == "usbsimple" ]; then
+	mkdir -p $diri
+	echo "Escribe la ruta y nombre de la iso ej: /home/SLE-12-SP2.iso (case sensitive)"
+	read iso
+	clear
+	echo "Escribe la ruta donde se encuentra el autoyast"
+	read yast
+	clear
+	mount -o loop $iso $diri
+	cd /mnt/
+	tar -cf - linux | (cd /var/tmp/ && tar -xf - )
+	cd $loa
+	chmod 777 /var/tmp/linux
+	chmod +w isolinux.cfg
+	cp $yast $raiz/usb.xml
+	cat > /tmp/isolinux.cfg << "EOF"
+default Install SIPA Linux
+
+# hard disk
+label harddisk
+  localboot 0x80
+
+# install
+label Install SIPA Linux
+  kernel linux
+  append initrd=initrd showopts splash=silent autoyast=usb:///usb.xml language=es_ES keytable=es
+
+# repair
+label repair
+  kernel linux
+  append initrd=initrd splash=silent repair=1 showopts
+
+# rescue
+label rescue
+  kernel linux
+  append initrd=initrd splash=silent rescue=1 showopts
+
+# mediacheck
+label mediachk
+  kernel linux
+  append initrd=initrd splash=silent mediacheck=1 showopts
+
+# memory test
+label memtest
+  kernel memtest
+
+ui		gfxboot bootlogo message
+implicit	1
+prompt		1
+timeout		600
+EOF
+	cp /tmp/isolinux.cfg $loa/
+	clear
+	echo "Creando la ISO ... Wait a minit"
+	mkisofs -J -allow-lowercase -allow-multidot -o $HOME/usbsimple-`date +%d.%m.%Y`.iso -b boot/x86_64/loader/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table /var/tmp/linux 2>/dev/null
+	sleep 5
+	cd $HOME
+	isohybrid usbsimple-`date +%d.%m.%Y`.iso
+	clear
+	ls -h --full-time $HOME/usbsimple-`date +%d.%m.%Y`.iso | awk $'{print $5, $9}'
+	umount /mnt/linux
+	rm -rf /var/tmp/linux
+	clear
+	echo "Ya he terminado, pero ... ¿Quieres grabar la iso en un USB?"
+	echo "Escribe yes para grabar o NO para finalizar"
+	read quehago
+		if [ $quehago = yes ]
+		then
+		clear
+		echo
+		echo "Estos son los dispositivos de almacenamiento conectados"
+		lsblk | awk '{print $1, $4}'
+		echo
+		echo
+		echo "Elige un dispositivo para grabar la iso en el"
+		read dispositivo
+		clear
+		echo "Grabando la iso en el USB seleccionado: $dispositivo"
+		dd if=$HOME/usbsimple-`date +%d.%m.%Y`.iso of=/dev/$dispositivo bs=4M status=progress
+		elif [ $quehago = no ]
+		then
+		exit
+		fi
+
+
+
+
+#This option create a bootable USB with only boot files and route to server with contain autoyast.xml and packets repo
+elif [ "$1" == "fullusb" ]; then
+	mkdir -p $diri
+	echo "Escribe la ruta y nombre de la iso ej: /home/SLE-12-SP2.iso (case sensitive)"
+	read iso
+	clear
+	mount -o loop $iso $diri
+	cd /mnt/
+	tar -cf - linux | (cd /var/tmp/ && tar -xf - )
+	cd $loa
+	chmod 777 /var/tmp/linux
+	chmod +w isolinux.cfg
+	cat > /tmp/isolinux.cfg << "EOF"
+default Install SIPA Linux
+
+# hard disk
+label harddisk
+  localboot 0x80
+
+# install
+label Install SIPA Linux
+  kernel linux
+  append initrd=initrd showopts splash=silent autoyast=usb:///usb.xml language=es_ES keytable=es
+
+# repair
+label repair
+  kernel linux
+  append initrd=initrd splash=silent repair=1 showopts
+
+# rescue
+label rescue
+  kernel linux
+  append initrd=initrd splash=silent rescue=1 showopts
+
+# mediacheck
+label mediachk
+  kernel linux
+  append initrd=initrd splash=silent mediacheck=1 showopts
+
+# memory test
+label memtest
+  kernel memtest
+
+ui		gfxboot bootlogo message
+implicit	1
+prompt		1
+timeout		600
+EOF
+echo
+echo
+	clear
+	clear
+	cp /tmp/isolinux.cfg $loa/
+	echo $HOME
+	cp $HOME/usb.xml $raiz/usb.xml
+	cd /var/tmp/linux
+	mkdir SIPA
+	cp $HOME/SIPA/*.rpm /var/tmp/linux/SIPA
+	cp $HOME/SIPA/*.sh /var/tmp/linux/SIPA
+	echo "Estos son los paquetes SIPA"
+	echo
+	echo
+	cd /var/tmp/linux/SIPA
+	du -sch *
+	echo
+	echo
+	echo "Se instalaran DESPUES del sistema"
+	sleep 5
+	mkisofs -J -allow-lowercase -allow-multidot -max-iso9660-filenames -l -o $HOME/Fullusb-`date +%d.%m.%Y`.iso -b boot/x86_64/loader/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table /var/tmp/linux 2>/dev/null
+	sleep 5
+	cd $HOME
+	isohybrid Fullusb-`date +%d.%m.%Y`.iso
+	clear
+	ls -h --full-time $HOME/Fullusb-`date +%d.%m.%Y`.iso | awk $'{print $5, $9}'
+	umount /mnt/linux
+	rm -rf /var/tmp/linux
+	clear
+	echo "Ya he terminado, pero ... ¿Quieres grabar la iso en un USB?"
+	echo "Escribe yes para grabar o NO para finalizar"
+	read quehago
+		if [ $quehago = yes ]
+		then
+		clear
+		echo
+		echo "Estos son los dispositivos de almacenamiento conectados"
+		lsblk | awk '{print $1, $4}'
+		echo
+		echo
+		echo "Elige un dispositivo para grabar la iso en el"
+		read dispositivo
+		clear
+		echo "Grabando la iso en el USB seleccionado: $dispositivo"
+		dd if=$HOME/Fullusb-`date +%d.%m.%Y`.iso of=/dev/$dispositivo bs=4M status=progress
+		elif [ $quehago = no ]
+		then
+		exit
+		fi
+
+#Function PXE generate iso with size is 73MB only contain boot for foce PXE install. This method download system from repo and obtain IP with DHCP.
+elif [ "$1" == "autopxe" ]; then
+	mkdir -p $diri
+	clear
+	echo "Escribe la ruta y nombre de la iso ej: /home/SLE-12-SP2.iso (case sensitive)"
+	read iso
+	clear
+	mount -o loop $iso $diri
+	cd /mnt/
+	tar -cf - linux | (cd /var/tmp/ && tar -xf - )
+	cd $loa
+	chmod +w isolinux.cfg
+	cat > /tmp/isolinux.cfg << "EOF"
+default harddisk
+
+# hard disk
+label harddisk
+  localboot 0x80
+
+# install
+label Install SIPA Linux
+  kernel linux
+  append initrd=initrd showopts splash=silent ifcfg=eth*=dhcp install=cambiame1 autoyast=cambiame2 language=es_ES keytable=es
+
+# repair
+label repair
+  kernel linux
+  append initrd=initrd splash=silent repair=1 showopts
+
+# rescue
+label rescue
+  kernel linux
+  append initrd=initrd splash=silent rescue=1 showopts
+
+# mediacheck
+label mediachk
+  kernel linux
+  append initrd=initrd splash=silent mediacheck=1 showopts
+
+# memory test
+label memtest
+  kernel memtest
+
+ui		gfxboot bootlogo message
+implicit	1
+prompt		1
+timeout		600
+EOF
+	echo "Dime la ruta del repositorio donde esta la paqueteria, ej; http://192.168.1.1/iso (La ruta completa por favor)"
+	read repo
+	clear
+	echo "Ahora dime la ruta del autoyast en el repositorio ej: http://192.168.1.1/autoyast.xml (La ruta completa por favor)"
+	read auto
+	clear
+	echo $repo
+	echo $auto
+	sed "s|cambiame1|${repo}|g" /tmp/isolinux.cfg > /tmp/isolinuxvar1
+	sed "s|cambiame2|${auto}|g" /tmp/isolinuxvar1 > /tmp/isolinux.cfg
+	cp /tmp/isolinux.cfg $loa/isolinux.cfg
+	rm -rf /tmp/isolinux*
+	clear
+	echo "Eliminando contenido no necesario para el preboot usb"
+	cd /var/tmp/linux
+	rm -rf ChangeLog COPYRIGHT COPYRIGHT.de docu NEWS README suse
+	clear
+	echo "Lo que viene ahora dara un error, pero es normal"
+	cd /var/tmp/linux/boot/x86_64
+	sudo rm *
+	echo "No te preocupes, en serio, no es necesario"
+	clear	
+	cp /mnt/linux/boot/x86_64/yast2-trans-en* .
+	cp /mnt/linux/boot/x86_64/yast2-trans-es* .
+	cd $loa			
+	rm -rf *.tr
+	rm -rf *.hlp
+	cp /mnt/linux/boot/x86_64/loader/en.hlp .
+	cp /mnt/linux/boot/x86_64/loader/en.* .
+	cp /mnt/linux/boot/x86_64/loader/es.* .
+	cd /var/tmp/linux
+	mkisofs -J -allow-lowercase -allow-multidot  -o $HOME/autopxe-`date +%d.%m.%Y`.iso -b boot/x86_64/loader/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table /var/tmp/linux 2>/dev/null
+	sleep 5
+	cd $HOME
+	isohybrid autopxe-`date +%d.%m.%Y`.iso
+	ls -h --full-time $HOME/autopxe-`date +%d.%m.%Y`.iso | awk $'{print $5, $9}'
+	umount /mnt/linux
+	rm -rf /var/tmp/linux
+	clear
+	echo "Ya he terminado, pero ... ¿Quieres grabar la iso en un USB?"
+	echo "Escribe yes para grabar o NO para finalizar"
+	read quehago
+		if [ $quehago = yes ]
+		then
+		clear
+		echo
+		echo "Estos son los dispositivos de almacenamiento conectados"
+		lsblk | awk '{print $1, $4}'
+		echo
+		echo
+		echo "Elige un dispositivo para grabar la iso en el"
+		read dispositivo
+		clear
+		echo "Grabando la iso en el USB seleccionado: $dispositivo"
+		dd if=$HOME/autopxe-`date +%d.%m.%Y`.iso of=/dev/$dispositivo bs=4M status=progress
+		elif [ $quehago = no ]
+		then
+		exit
+		fi
+
+
+
+
+#Function PXE generate iso with size is 73MB only contain boot for foce PXE install. This method download system from repo and obtain IP with DHCP.
+elif [ "$1" == "statpxe" ]; then
+	mkdir -p $diri
+	clear
+	echo "Escribe la ruta y nombre de la iso ej: /home/SLE-12-SP2.iso (case sensitive)"
+	read iso
+	clear
+	mount -o loop $iso $diri
+	cd /mnt/
+	tar -cf - linux | (cd /var/tmp/ && tar -xf - )
+	cd $loa
+	chmod +w isolinux.cfg
+	cat > /tmp/isolinux.cfg << "EOF"
+default harddisk
+
+# hard disk
+label harddisk
+  localboot 0x80
+
+# install
+label Install SIPA Linux
+  kernel linux
+  append initrd=initrd showopts splash=silent ifcfg=eth0=cambiame1 install=cambiame2 autoyast=cambiame3 language=es_ES keytable=es
+
+# repair
+label repair
+  kernel linux
+  append initrd=initrd splash=silent repair=1 showopts
+
+# rescue
+label rescue
+  kernel linux
+  append initrd=initrd splash=silent rescue=1 showopts
+
+# mediacheck
+label mediachk
+  kernel linux
+  append initrd=initrd splash=silent mediacheck=1 showopts
+
+# memory test
+label memtest
+  kernel memtest
+
+ui		gfxboot bootlogo message
+implicit	1
+prompt		1
+timeout		600
+EOF
+	echo "Dime la ruta del repositorio donde esta la paqueteria, ej; http://192.168.1.1/iso (La ruta completa por favor)"
+	read repo
+	clear
+	echo "Ahora dime la ruta del autoyast en el repositorio ej: http://192.168.1.1/autoyast.xml (La ruta completa por favor)"
+	read auto
+	clear
+	echo "Dime la IP de la CTS"
+	read ip
+	clear
+	echo $ip
+	echo $repo
+	echo $auto
+	sed "s|cambiame1|${ip}|g" /tmp/isolinux.cfg > /tmp/isolinuxvar
+	sed "s|cambiame2|${repo}|g" /tmp/isolinuxvar > /tmp/isolinuxvar1
+	sed "s|cambiame3|${auto}|g" /tmp/isolinuxvar1 > /tmp/isolinux.cfg
+	cp /tmp/isolinux.cfg $loa/isolinux.cfg
+	rm -rf /tmp/isolinux*
+	clear
+	echo "Eliminando contenido no necesario para el preboot usb"
+	cd /var/tmp/linux
+	rm -rf ChangeLog COPYRIGHT COPYRIGHT.de docu NEWS README suse
+	clear
+	echo "Lo que viene ahora dara un error, pero es normal"
+	cd /var/tmp/linux/boot/x86_64
+	sudo rm *
+	echo "No te preocupes, en serio, no es necesario"
+	clear	
+	cp /mnt/linux/boot/x86_64/yast2-trans-en* .
+	cp /mnt/linux/boot/x86_64/yast2-trans-es* .
+	cd $loa			
+	rm -rf *.tr
+	rm -rf *.hlp
+	cp /mnt/linux/boot/x86_64/loader/en.hlp .
+	cp /mnt/linux/boot/x86_64/loader/en.* .
+	cp /mnt/linux/boot/x86_64/loader/es.* .
+	cd /var/tmp/linux
+	mkisofs -J -allow-lowercase -allow-multidot  -o $HOME/statpxe-`date +%d.%m.%Y`.iso -b boot/x86_64/loader/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table /var/tmp/linux 2>/dev/null
+	sleep 5
+	cd $HOME
+	isohybrid statpxe-`date +%d.%m.%Y`.iso
+	ls -h --full-time $HOME/statpxe-`date +%d.%m.%Y`.iso | awk $'{print $5, $9}'
+	umount /mnt/linux
+	rm -rf /var/tmp/linux
+	clear
+	echo "Ya he terminado, pero ... ¿Quieres grabar la iso en un USB?"
+	echo "Escribe yes para grabar o NO para finalizar"
+	read quehago
+		if [ $quehago = yes ]
+		then
+		clear
+		echo
+		echo "Estos son los dispositivos de almacenamiento conectados"
+		lsblk | awk '{print $1, $4}'
+		echo
+		echo
+		echo "Elige un dispositivo para grabar la iso en el"
+		read dispositivo
+		clear
+		echo "Grabando la iso en el USB seleccionado: $dispositivo"
+		dd if=$HOME/statpxe-`date +%d.%m.%Y`.iso of=/dev/$dispositivo bs=4M status=progress
+		elif [ $quehago = no ]
+		then
+		exit
+		fi
+
+#If you need help.... type help :D
+elif [ "$1" == "$1" ]; then
+	clear
+	echo ""
+	echo ""
+	echo "Bienvenido a la ayuda ... no hay mucho que decir"
+	echo "Este script a sido creado por Juanito, por que es bastante vago"
+	echo "Solo tiene 2 opciones + la ayuda ..."
+	echo "Escribe "./makeSIPA usbsimple" para realizar una ISO de SUSE con un isolinux.cfg modificado para instalar desde un USB SIN paqueteria de SIPA"
+	echo "Escribe "./makeSIPA fullusb" para realizar una ISO de SUSE con un isolinux.cfg modificado para instalar desde un USB con los paquetes de SIPA instalados"
+	echo "Escribe "./makeSIPA autopxe" para realizar una ISO con la configuracion base de PXE y realizar la instalacion del sistema a traves de un repositorio http mediante DHCP"
+	echo "Escribe "./makeSIPA statpxe" para realizar una ISO con la configuracion base de PXE para realizar la instalacion del sistema a traves de un repositorio http, la CTS tendra IP statica"
+	echo "Para crear la ISO se necesita ejecutar este script en un S.O Linux, con permisos de root"
+fi
