@@ -1,6 +1,8 @@
 #!/bin/bash
 #set -x
 
+#This script written for create ISO SUSE LINUX modded with autoyast and isolinux.cfg
+
 ################################################### VARIABLES ##############################################
 diri=/mnt/linux
 out=/home/
