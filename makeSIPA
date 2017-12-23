@@ -9,10 +9,7 @@ raiz=/var/tmp/linux
 pkg=/home/$USER/SIPA/
 
 ##########################################
-
 #### Check root user ####
-
-
 if [[ $EUID -ne 0 ]]; then
 	clear
 	echo
@@ -27,8 +24,6 @@ if [[ $EUID -ne 0 ]]; then
 	echo
 	echo
 	exit 1
-
-
 elif [ "$1" == "usbsimple" ]; then
 	mkdir -p $diri
 	echo "Escribe la ruta y nombre de la iso ej: /home/SLE-12-SP2.iso (case sensitive)"
@@ -112,10 +107,6 @@ EOF
 		then
 		exit
 		fi
-
-
-
-
 #This option create a bootable USB with only boot files and route to server with contain autoyast.xml and packets repo
 elif [ "$1" == "fullusb" ]; then
 	mkdir -p $diri
@@ -213,7 +204,6 @@ echo
 		then
 		exit
 		fi
-
 #Function PXE generate iso with size is 73MB only contain boot for foce PXE install. This method download system from repo and obtain IP with DHCP.
 elif [ "$1" == "autopxe" ]; then
 	mkdir -p $diri
@@ -321,10 +311,6 @@ EOF
 		then
 		exit
 		fi
-
-
-
-
 #Function PXE generate iso with size is 73MB only contain boot for foce PXE install. This method download system from repo and obtain IP with DHCP.
 elif [ "$1" == "statpxe" ]; then
 	mkdir -p $diri
@@ -437,7 +423,6 @@ EOF
 		then
 		exit
 		fi
-
 #If you need help.... type help :D
 elif [ "$1" == "$1" ]; then
 	clear
