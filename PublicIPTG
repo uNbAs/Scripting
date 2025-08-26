@@ -1,8 +1,8 @@
 #!/bin/bash
 
-DOM=PON TU DOMINIO
-HASH=HAS DE TELEGRAM
-CHAT=NUMEROS DEL CHAT
+DOM=PON_TU_DOMINIO
+HASH=HASH_DE_TELEGRAM
+CHAT=NUMEROS_DEL_CHAT
 
 # Obtener la IP del comando ping
 ip_ping=$(ping -c 1 $DOM 2>/dev/null | awk -F'[()]' '/PING/{print $2}')
