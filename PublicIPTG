@@ -1,0 +1,30 @@
+#!/bin/bash
+
+DOM=PON TU DOMINIO
+HASH=HAS DE TELEGRAM
+CHAT=NUMEROS DEL CHAT
+
+# Obtener la IP del comando ping
+ip_ping=$(ping -c 1 $DOM 2>/dev/null | awk -F'[()]' '/PING/{print $2}')
+
+# Obtener la IP pública usando curl
+ip_curl=$(curl -s 'https://api.ipify.org')
+
+# Verificar que ambas IPs se obtuvieron correctamente
+if [[ -z "$ip_ping" ]]; then
+    echo "Error: No se pudo obtener la IP mediante ping"
+    exit 1
+fi
+
+if [[ -z "$ip_curl" ]]; then
+    echo "Error: No se pudo obtener la IP mediante curl"
+    exit 1
+fi
+
+# Comparar las dos IPs
+if [[ "$ip_ping" == "$ip_curl" ]]; then
+    curl -s -X POST https://api.telegram.org/bot"$HASH"/sendMessage -d chat_id="$CHAT" -d text="Las IP coinciden, no hay necesidad de cambio"
+else
+    curl -s -X POST https://api.telegram.org/bot"$HASH"/sendMessage -d chat_id="$CHAT" -d text="Tu IP publica parece ser $IP"
+    
+fi
