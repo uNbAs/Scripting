@@ -25,6 +25,6 @@ fi
 if [[ "$ip_ping" == "$ip_curl" ]]; then
     curl -s -X POST https://api.telegram.org/bot"$HASH"/sendMessage -d chat_id="$CHAT" -d text="Las IP coinciden, no hay necesidad de cambio"
 else
-    curl -s -X POST https://api.telegram.org/bot"$HASH"/sendMessage -d chat_id="$CHAT" -d text="Tu IP publica parece ser $IP"
+    curl -s -X POST https://api.telegram.org/bot"$HASH"/sendMessage -d chat_id="$CHAT" -d text="Tu IP publica parece ser $ip_curl"
     
 fi
